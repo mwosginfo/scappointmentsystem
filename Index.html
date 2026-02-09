@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registration Form</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+/* GENERAL */
+body {
+    background: #a4c2f4;
+    font-family: "Inter", sans-serif;
+}
+
+h5 {
+    font-weight: 700;
+}
+
+/* CARD WRAPPERS */
+.appt-block,
+.option-box {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 18px;
+    transition: 0.2s ease;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+}
+
+/* HOVER EFFECT */
+.option-box:hover,
+.appt-block:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+}
+
+/* SELECTED STATE */
+.option-box.selected {
+    border: 2px solid #28a745 !important;
+    background: #e9f9ed !important;
+}
+
+/* AGENCY ICONS */
+.option-box img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+/* SERVICE SUBTEXT */
+.services-subheader {
+    font-size: 0.85rem;
+    line-height: 1.25;
+}
+
+/* DATE BUTTONS */
+.date-btn {
+    margin-right: 6px;
+    margin-bottom: 4px;
+}
+
+.date-btn.active {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+}
+
+/* QR TICKET */
+.ticket-wrapper {
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 480px) {
+    .ticket-wrapper {
+        transform: scale(0.95);
+        transform-origin: top center;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="container py-4">
+
+<!-- PAGE 1 -->
+<div id="page1">
+
+<!-- Scheduled Appointments -->
+<h5 class="mb-3">Scheduled Appointments Required</h5>
+<div class="row g-3">
+
+    <!-- PSA -->
+    <div class="col-6 col-md-3">
+        <div class="appt-block text-center">
+            <div class="option-box agency-box" data-agency="PSA">
+                <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/4.png" alt="PSA">
+                <div><strong>Philippine Statistics Authority</strong></div>
+                <div class="services-subheader text-muted mt-1">
+                    <div>Services:</div>
+                    <div>Civil Registry Issuance</div>
+                    <div>National ID Registration</div>
+                    <div>Civil Registration Matters</div>
+                </div>
+            </div>
+
+            <div class="mt-2 date-wrapper d-none">
+                <button class="btn btn-outline-primary date-btn" data-agency="PSA" data-date="2025-11-29">29 Nov</button>
+                <button class="btn btn-outline-primary date-btn" data-agency="PSA" data-date="2025-11-30">30 Nov</button>
+            </div>
+
+            <select class="form-select mt-2 time-dropdown d-none" id="psaTime" data-agency="PSA"></select>
+            <small class="text-danger slot-msg" id="psaMsg"></small>
+        </div>
+    </div>
+
+    <!-- NBI -->
+    <div class="col-6 col-md-3">
+        <div class="appt-block text-center">
+            <div class="option-box agency-box" data-agency="NBI">
+                <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/NBI.png" alt="NBI">
+                <div><strong>NBI</strong></div>
+                <div class="services-subheader text-muted mt-1">
+                    <div>Services:</div>
+                    <div>NBI Clearance Issuance</div>
+                </div>
+            </div>
+
+            <div class="mt-2 date-wrapper d-none">
+                <button class="btn btn-outline-primary date-btn" data-agency="NBI" data-date="2025-11-29">29 Nov</button>
+                <button class="btn btn-outline-primary date-btn" data-agency="NBI" data-date="2025-11-30">30 Nov</button>
+            </div>
+
+            <select class="form-select mt-2 time-dropdown d-none" id="nbiTime" data-agency="NBI"></select>
+            <small class="text-danger slot-msg" id="nbiMsg"></small>
+        </div>
+    </div>
+
+    <!-- LTO -->
+    <div class="col-6 col-md-3">
+        <div class="appt-block text-center">
+            <div class="option-box agency-box" data-agency="LTO">
+                <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/11.png" alt="LTO">
+                <div><strong>Land Transportation Office</strong></div>
+                <div class="services-subheader text-muted mt-1">
+                    <div>Services:</div>
+                    <div>Driver's License Renewal</div>
+                </div>
+            </div>
+
+            <div class="mt-2 date-wrapper d-none">
+                <button class="btn btn-outline-primary date-btn" data-agency="LTO" data-date="2025-11-29">29 Nov</button>
+                <button class="btn btn-outline-primary date-btn" data-agency="LTO" data-date="2025-11-30">30 Nov</button>
+            </div>
+
+            <select class="form-select mt-2 time-dropdown d-none" id="ltoTime" data-agency="LTO"></select>
+            <small class="text-danger slot-msg" id="ltoMsg"></small>
+        </div>
+    </div>
+
+    <!-- Pag-IBIG -->
+    <div class="col-6 col-md-3">
+        <div class="appt-block text-center">
+            <div class="option-box agency-box" data-agency="PagIBIG">
+                <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/5.png" alt="Pag-IBIG">
+                <div><strong>Pag-IBIG Fund</strong></div>
+                <div class="services-subheader text-muted mt-1">
+                    <div>Services:</div>
+                    <div>Membership Services</div>
+                    <div>MP2 Enrollment</div>
+                    <div>Loan Consultation</div>
+                </div>
+            </div>
+
+            <div class="mt-2 date-wrapper d-none">
+                <button class="btn btn-outline-primary date-btn" data-agency="PagIBIG" data-date="2025-11-29">29 Nov</button>
+                <button class="btn btn-outline-primary date-btn" data-agency="PagIBIG" data-date="2025-11-30">30 Nov</button>
+            </div>
+
+            <select class="form-select mt-2 time-dropdown d-none" id="pagibigTime" data-agency="PagIBIG"></select>
+            <small class="text-danger slot-msg" id="pagibigMsg"></small>
+        </div>
+    </div>
+
+</div>
+
+<!-- Embassy Transactions -->
+<h5 class="mt-4 mb-3">Philippine Embassy Transactions</h5>
+<div class="row g-3 text-center">
+
+  <!-- Notarials -->
+  <div class="col-6 col-md-3">
+    <div class="appt-block">
+      <div class="option-box agency-box" data-agency="Notarials" data-value="Phil. Embassy - Notarials">
+        <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/2.png" alt="Notarials">
+        <div><strong>Notarials</strong></div>
+        <div class="services-subheader mt-1 text-muted">
+          <div>Services:</div>
+          <div>Affidavits</div>
+          <div>Legal Notarization</div>
+        </div>
+      </div>
+
+      <div class="mt-2 date-wrapper d-none">
+        <button class="btn btn-outline-primary date-btn" data-agency="Notarials" data-date="2025-11-29">29 Nov</button>
+        <button class="btn btn-outline-primary date-btn" data-agency="Notarials" data-date="2025-11-30">30 Nov</button>
+      </div>
+
+      <select class="form-select mt-2 time-dropdown d-none" id="notarialsTime" data-agency="Notarials"></select>
+      <small class="text-danger slot-msg" id="notarialsMsg"></small>
+    </div>
+  </div>
+
+  <!-- Application -->
+  <div class="col-6 col-md-3">
+    <div class="appt-block">
+      <div class="option-box" data-value="Phil. Embassy - Passport">
+        <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/2.png" alt="Passport Application">
+        <div><strong>Passport Application</strong></div>
+      </div>
+    </div>
+  </div>
+
+    <div class="col-6 col-md-3">
+    <div class="appt-block">
+      <div class="option-box" data-value="Phil. Embassy - Passport ID">
+        <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/2.png" alt="PE ID">
+        <div><strong>Phil. Embassy - Ph Embassy ID</strong></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- PE_ATN -->
+  <div class="col-6 col-md-3">
+    <div class="appt-block">
+      <div class="option-box" data-value="Phil. Embassy - ATN">
+        <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/2.png" alt="ATN">
+        <div><strong>Assistance-To-Nationals (ATN)</strong></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- OTHER AGENCIES -->
+<h5 class="mt-4 mb-3">Other Agencies</h5>
+<div class="row g-3 justify-content-center text-center">
+
+  <!-- SSS -->
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="option-box" data-value="SSS">
+      <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/SSS.png" alt="SSS">
+      <div><strong>SSS</strong></div>
+      <div class="services-subheader text-muted mt-1">
+        <div>Membership and Benefits Services</div>
+        <div>Annual Confirmation of Pensioners</div>
+        <div>PRN Generation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PhilHealth -->
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="option-box" data-value="PhilHealth">
+      <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/9.png" alt="PhilHealth">
+      <div><strong>PhilHealth</strong></div>
+      <div class="services-subheader text-muted mt-1">
+        <div>Membership and Benefits Services</div>
+        <div>YAKAP Enrollment</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAO -->
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="option-box" data-value="PAO">
+      <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/PAO.png" alt="PAO">
+      <div><strong>PAO</strong></div>
+      <div class="services-subheader text-muted mt-1">
+        <div>Legal Advice and Legal Information Dissemination</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bureau of Immigration -->
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="option-box" data-value="BI">
+      <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/12.png" alt="Bureau of Immigration">
+      <div><strong>Bureau of Immigration</strong></div>
+      <div class="services-subheader text-muted mt-1">
+        <div>Inquiries</div>
+        <div>Information Dissemination</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DSWD -->
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="option-box" data-value="DSWD">
+      <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/8.png" alt="DSWD">
+      <div><strong>DSWD</strong></div>
+      <div class="services-subheader text-muted mt-1">
+        <div>Information on Programs and Services</div>
+        <div>Counseling/Psychosocial First Aid</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Land Bank -->
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="option-box" data-value="Landbank">
+      <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/Landbank.png" alt="Land Bank">
+      <div><strong>Land Bank</strong></div>
+      <div class="services-subheader text-muted mt-1">
+        <div>GoBayani Account</div>
+        <div>Financial Education</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UP Open University -->
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="option-box" data-value="UPOU">
+      <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/13.png" alt="UP Open University">
+      <div><strong>UP Open University</strong></div>
+      <div class="services-subheader text-muted mt-1">
+        <div>Inquiries on Admissions and Courses</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<button class="btn btn-success mt-4" id="nextBtn">Next</button>
+
+</div><!-- END PAGE 1 -->
+
+<!-- PAGE 2 -->
+<div id="page2" class="d-none">
+    <h3 class="mb-3">Complete your registration</h3>
+
+    <form id="registrationForm">
+        <input type="hidden" id="selectedOptions" name="selectedOptions">
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Last Name</label>
+                <input type="text" class="form-control" name="lastName" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">First Name</label>
+                <input type="text" class="form-control" name="firstName" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Middle Name</label>
+                <input type="text" class="form-control" name="middleName">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="email" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Contact</label>
+                <input type="text" class="form-control" name="contact" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Gender</label>
+                <select class="form-select" name="gender" required>
+                    <option value="">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Employer</label>
+                <input type="text" class="form-control" name="employer">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Position</label>
+                <input type="text" class="form-control" name="position">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </form>
+</div>
+
+<!-- QR SECTION -->
+<div id="qrSection" class="d-none text-center mt-4">
+    <div class="ticket-wrapper mx-auto" style="max-width:420px;border:2px solid #000;border-radius:12px;background:#fff;">
+        <div style="border-bottom:2px dashed #ccc;">
+            <img src="https://mwo-singapore.dmw.gov.ph/wp-content/uploads/2025/11/reg_pass.jpg" style="width:100%;" alt="Registration Pass">
+        </div>
+        <div class="p-3">
+            <h4 id="ticketName" class="fw-bold mb-2"></h4>
+            <p>Please save or screenshot this QR code.</p>
+            <img id="qrCode" style="width:65%;max-width:210px;border:1px solid #ccc;padding:8px;border-radius:8px;" alt="QR Code">
+            <p class="mt-3"><strong>Selected Agencies & Appointments:</strong></p>
+            <ul id="selectedAgenciesList" style="padding-left:20px;text-align:left;"></ul>
+        </div>
+    </div>
+</div>
+
+</div>
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyqM5uyreFNHREXmRVFl74vqCNrKFBd3XJvex2AzTEpzE5Ar-qC19emP8Nuu5Ap7UsEpg/exec";
+
+let selectedAgencies = [];
+let selectedDates = { LTO: "", NBI: "", PSA: "", PagIBIG: "", Notarials: "" };
+let selectedTimes = { LTO: "", NBI: "", PSA: "", PagIBIG: "", Notarials: "" };
+const appointmentAgencies = ["LTO", "NBI", "PSA", "PagIBIG", "Notarials"];
+const selectedDateTimes = {}; // e.g., { LTO: "2025-11-29 8:00 AM" }
+
+// ======================
+// Agency selection
+// ======================
+document.querySelectorAll(".option-box").forEach(box => {
+  box.addEventListener("click", () => {
+    const agency = box.dataset.agency || box.dataset.value;
+    if (!agency) return;
+
+    box.classList.toggle("selected");
+
+    if (selectedAgencies.includes(agency)) {
+      deselectAgency(agency, box);
+    } else {
+      selectAgency(agency, box);
+    }
+  });
+});
+
+function deselectAgency(agency, box) {
+  selectedAgencies = selectedAgencies.filter(a => a !== agency);
+  if (appointmentAgencies.includes(agency)) {
+    selectedDates[agency] = "";
+    selectedTimes[agency] = "";
+    delete selectedDateTimes[agency];
+  }
+
+  const parent = box.closest(".appt-block");
+  if (parent) {
+    const dateWrapper = parent.querySelector(".date-wrapper");
+    const dropdown = parent.querySelector(".time-dropdown");
+    const slotMsg = parent.querySelector(".slot-msg");
+
+    if (dateWrapper) dateWrapper.classList.add("d-none");
+    if (dropdown) {
+      dropdown.classList.add("d-none");
+      dropdown.innerHTML = "";
+      dropdown.value = "";
+    }
+    if (slotMsg) slotMsg.innerText = "";
+
+    parent.querySelectorAll(".date-btn").forEach(btn => btn.classList.remove("active"));
+  }
+
+  updateAllDropdowns();
+}
+
+function selectAgency(agency, box) {
+  selectedAgencies.push(agency);
+  const parent = box.closest(".appt-block");
+  if (parent) {
+    const dateWrapper = parent.querySelector(".date-wrapper");
+    if (dateWrapper) dateWrapper.classList.remove("d-none");
+  }
+}
+
+// ======================
+// Date selection
+// ======================
+document.querySelectorAll(".date-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const agency = btn.dataset.agency;
+    const date = btn.dataset.date;
+
+    selectedDates[agency] = date;
+
+    const parent = btn.closest(".appt-block");
+    parent.querySelectorAll(".date-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const dropdown = parent.querySelector(".time-dropdown");
+    const msg = parent.querySelector(".slot-msg");
+
+    dropdown.classList.remove("d-none");
+    dropdown.disabled = true;
+    msg.innerText = "Loading...";
+    dropdown.innerHTML = "<option>Loading...</option>";
+
+    fetchAvailableSlots(agency, date, dropdown, msg);
+  });
+});
+
+async function fetchAvailableSlots(agency, date, dropdown, msg) {
+  try {
+    const res = await fetch(`${GAS_URL}?action=getSlots&agency=${agency}&date=${date}`);
+    const availableSlots = await res.json();
+
+    if (!availableSlots.length) {
+      dropdown.innerHTML = "<option>No available slots</option>";
+      dropdown.disabled = true;
+      msg.innerText = "No slots available";
+      return;
+    }
+
+    dropdown.disabled = false;
+    msg.innerText = "";
+    updateDropdownWithSlots(dropdown, availableSlots);
+  } catch (err) {
+    dropdown.innerHTML = "<option>Error loading slots</option>";
+    dropdown.disabled = true;
+    msg.innerText = "Error fetching slots";
+    console.error(err);
+  }
+}
+
+// ======================
+// Time selection
+// ======================
+document.querySelectorAll(".time-dropdown").forEach(dropdown => {
+  dropdown.addEventListener("change", function() {
+    const agency = this.dataset.agency;
+    const date = selectedDates[agency];
+    const time = this.value;
+
+    if (!date || !time || time === "") {
+      selectedTimes[agency] = "";
+      delete selectedDateTimes[agency];
+      updateAllDropdowns();
+      return;
+    }
+
+    selectedTimes[agency] = time;
+    selectedDateTimes[agency] = `${date} ${time}`;
+
+    updateAllDropdowns();
+  });
+});
+
+// ======================
+// Update all dropdowns to remove taken slots
+// ======================
+function updateAllDropdowns() {
+  document.querySelectorAll(".time-dropdown").forEach(dropdown => {
+    const agency = dropdown.dataset.agency;
+    const date = selectedDates[agency];
+    if (!date || dropdown.classList.contains("d-none")) return;
+
+    const currentValue = dropdown.value;
+    const takenSlots = Object.entries(selectedDateTimes)
+      .filter(([a, dt]) => a !== agency && dt && dt.startsWith(date))
+      .map(([_, dt]) => dt.split(" ").slice(1).join(" "));
+
+    // Use options already in dropdown (from GAS) and remove taken
+    const allOptions = Array.from(dropdown.querySelectorAll("option"))
+                            .map(o => o.value)
+                            .filter(v => v && v !== "Select time");
+
+    const availableSlots = allOptions.filter(s => !takenSlots.includes(s));
+
+    dropdown.innerHTML = '<option value="">Select time</option>';
+    availableSlots.forEach(s => {
+      const option = document.createElement("option");
+      option.value = s;
+      option.textContent = s;
+      dropdown.appendChild(option);
+    });
+
+    if (availableSlots.includes(currentValue)) {
+      dropdown.value = currentValue;
+    } else {
+      dropdown.value = "";
+    }
+  });
+}
+
+// ======================
+// Populate dropdown
+// ======================
+function updateDropdownWithSlots(dropdown, slots) {
+  const currentValue = dropdown.value;
+  dropdown.innerHTML = '<option value="">Select time</option>';
+  slots.forEach(s => {
+    const option = document.createElement("option");
+    option.value = s;
+    option.textContent = s;
+    dropdown.appendChild(option);
+  });
+  if (slots.includes(currentValue)) dropdown.value = currentValue;
+}
+
+// ======================
+// Form submission
+// ======================
+document.getElementById("registrationForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const form = this;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "Submitting..."; }
+
+  const formData = new FormData(form);
+
+  // OWWA checkboxes
+  const owwaOptions = Array.from(document.querySelectorAll('input[name="OWWAtransSelected"]:checked'))
+                            .map(cb => cb.value)
+                            .join(", ");
+  formData.append("OWWAtransSelected", owwaOptions);
+
+  // DMW radio
+  const dmwValue = document.querySelector('input[name="DMWtrans"]:checked')?.value || "";
+  formData.append("DMWtransSelected", dmwValue);
+
+  // Append appointments
+  appointmentAgencies.forEach(ag => {
+    if (selectedAgencies.includes(ag) && selectedDates[ag] && selectedTimes[ag]) {
+      formData.append("appt" + ag, `${selectedDates[ag]} ${selectedTimes[ag]}`);
+    }
+  });
+
+  try {
+    const response = await fetch(GAS_URL, { method: "POST", body: formData });
+    const result = await response.json();
+    if (!result.qrUrl) throw new Error("QR code URL missing from response");
+
+    const fullName = `${formData.get("firstName")} ${formData.get("lastName")}`;
+    document.getElementById("page2").classList.add("d-none");
+    document.getElementById("qrSection").classList.remove("d-none");
+    document.getElementById("ticketName").innerText = fullName;
+    document.getElementById("qrCode").src = result.qrUrl;
+
+    populateSelectedAgencies();
+  } catch (err) {
+    alert("Error submitting form: " + err.message);
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = "Submit"; }
+    console.error(err);
+  }
+});
+
+// ======================
+// Populate selected agencies
+// ======================
+function populateSelectedAgencies() {
+  const ul = document.getElementById("selectedAgenciesList");
+  ul.innerHTML = "";
+
+  selectedAgencies.forEach(agency => {
+    const li = document.createElement("li");
+    let displayText = agency;
+    if (appointmentAgencies.includes(agency) && selectedDates[agency] && selectedTimes[agency]) {
+      displayText += ` (${selectedDates[agency]} at ${selectedTimes[agency]})`;
+    }
+    li.innerText = displayText;
+    ul.appendChild(li);
+  });
+}
+// Next button
+document.getElementById("nextBtn").addEventListener("click", () => {
+  if (selectedAgencies.length === 0) { 
+    alert("Please select at least one agency"); 
+    return; 
+  }
+
+  // Validate appointment agencies have dates and times
+  for (let ag of appointmentAgencies) {
+    if (selectedAgencies.includes(ag)) {
+      if (!selectedDates[ag]) { 
+        alert(`${ag}: Please choose a date.`); 
+        return; 
+      }
+      if (!selectedTimes[ag]) { 
+        alert(`${ag}: Please choose a time slot.`); 
+        return; 
+      }
+    }
+  }
+
+  document.getElementById("selectedOptions").value = selectedAgencies.join(", ");
+
+  document.getElementById("page1").classList.add("d-none");
+  document.getElementById("page2").classList.remove("d-none");
+});
+
+// ======================
+// OWWA / DMW toggle
+// ======================
+document.getElementById('owwaOption')?.addEventListener('click', () => {
+  document.getElementById('owwaCheckboxes').classList.toggle('d-none');
+});
+document.getElementById('dmwOption')?.addEventListener('click', () => {
+  document.getElementById('dmwOptions').classList.toggle('d-none');
+});
+</script>
+</body>
+</html>
