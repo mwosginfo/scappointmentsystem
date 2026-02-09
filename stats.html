@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding: 30px; }
+    h1 { color: #192a56; font-weight: 700; }
+    .stat-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.06); text-align: center; }
+    .stat-card .number { font-size: 3rem; font-weight: 700; color: #273c75; }
+    .stat-card .label { color: #7f8fa6; font-size: .9rem; text-transform: uppercase; letter-spacing: 1px; }
+    .agency-stat { display: flex; align-items: center; gap: 15px; background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 5px rgba(0,0,0,.05); }
+    .agency-stat img { width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #f5f6fa; padding: 5px; }
+    .agency-stat .info { flex: 1; }
+    .agency-stat .count { font-size: 1.5rem; font-weight: 700; color: #273c75; }
+    .nav-links a { color: #0a55ff; text-decoration: none; margin-right: 15px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:900px">
+    <div class="nav-links mb-3">
+      <a href="?page=admin">⚙️ Admin</a>
+      <a href="?page=attendance">📋 Attendance</a>
+      <a href="?page=display">📺 Display</a>
+    </div>
+
+    <h1 class="mb-4">📊 Event Statistics</h1>
+    <button class="btn btn-outline-primary mb-4" onclick="loadStats()">🔄 Refresh</button>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="stat-card">
+          <div class="number" id="todayCount">—</div>
+          <div class="label">Today's Check-Ins</div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="stat-card">
+          <div class="number" id="totalCount">—</div>
+          <div class="label">Total Attendees</div>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="mb-3">Per Agency</h4>
+    <div id="agencyStats">
+      <p class="text-muted">Loading...</p>
+    </div>
+  </div>
+
+  <script>
+    window.onload = () => loadStats();
+
+    function loadStats() {
+      document.getElementById('agencyStats').innerHTML = '<p class="text-muted">Loading...</p>';
+      google.script.run.withSuccessHandler(render).withFailureHandler(e => {
+        document.getElementById('agencyStats').innerHTML = '<p class="text-danger">Error: ' + e.message + '</p>';
+      }).getEventStats();
+    }
+
+    function render(stats) {
+      document.getElementById('todayCount').textContent = stats.todayAttendance;
+      document.getElementById('totalCount').textContent = stats.totalAttendance;
+
+      const container = document.getElementById('agencyStats');
+      if (!stats.agencies || !stats.agencies.length) {
+        container.innerHTML = '<p class="text-muted">No agency data yet.</p>';
+        return;
+      }
+
+      container.innerHTML = stats.agencies.map(a => `
+        <div class="agency-stat">
+          ${a.logo ? `<img src="${a.logo}" alt="${a.name}" onerror="this.style.display='none'">` : '<div style="width:50px"></div>'}
+          <div class="info">
+            <strong>${a.name}</strong><br>
+            <small class="text-muted">${a.key}</small>
+          </div>
+          <div class="count">${a.total}</div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

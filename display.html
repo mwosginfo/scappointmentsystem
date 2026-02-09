@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); color: #fff; width: 100vw; height: 100vh; overflow: hidden; }
+    .main-container { display: flex; width: 100vw; height: 100vh; overflow: hidden; }
+
+    /* Left: Alerts */
+    .alerts-panel { width: 30%; min-width: 350px; max-width: 576px; background: linear-gradient(180deg, #1a1a2e, #0f0f1a); border-right: 3px solid #4cd137; display: flex; flex-direction: column; overflow: hidden; }
+    .alerts-header { padding: 25px 30px; background: rgba(76,209,55,.1); border-bottom: 2px solid rgba(76,209,55,.3); display: flex; align-items: center; gap: 15px; }
+    .alerts-header .icon { font-size: 2.5rem; animation: pulse 2s infinite; }
+    .alerts-header h2 { font-size: 1.8rem; font-weight: 700; color: #4cd137; text-transform: uppercase; letter-spacing: 2px; }
+    .alerts-list { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .serve-alert-card { background: linear-gradient(135deg, rgba(76,209,55,.15), rgba(76,209,55,.05)); border: 2px solid rgba(76,209,55,.4); border-radius: 16px; padding: 15px 20px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; animation: alertSlideIn .5s ease-out; }
+    .serve-alert-card.new-alert { border-left: 6px solid #4cd137; }
+    .serve-alert-card.missed { background: linear-gradient(135deg, rgba(232,65,24,.15), rgba(232,65,24,.05)); border: 2px solid rgba(232,65,24,.6); border-left: 6px solid #e84118; }
+    .alert-logo { width: 60px; height: 60px; min-width: 60px; border-radius: 10px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+    .alert-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .alert-content { flex: 1; }
+    .alert-number-qr { font-size: 1.8rem; font-weight: 700; color: #4cd137; margin-bottom: 5px; }
+    .alert-number-qr.missed-text { color: #e84118; }
+    .alert-transaction { font-size: 1.4rem; color: #fff; font-weight: 600; }
+
+    /* Right: Queue Cards */
+    .queue-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: linear-gradient(135deg, #f5f7fa, #e8ecef); }
+    .queue-header { padding: 20px 30px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,.1); text-align: center; }
+    .queue-header h1 { font-size: 2rem; font-weight: 700; color: #192a56; margin-bottom: 5px; }
+    .queue-header .subtitle { font-size: 1rem; color: #7f8fa6; }
+    .display-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 25px; overflow-y: auto; align-content: start; }
+
+    .transaction-display { background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,.08); overflow: hidden; min-height: 140px; transition: transform .3s; }
+    .transaction-display:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,.15); }
+    .card-with-logo { display: flex; height: 100%; min-height: 140px; }
+    .card-logo { width: 100px; min-width: 100px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); display: flex; align-items: center; justify-content: center; padding: 15px; border-right: 3px solid #f5f6fa; }
+    .card-logo img { width: 70px; height: 70px; object-fit: contain; }
+    .card-content { flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
+    .transaction-name { font-size: 1.4rem; font-weight: 700; color: #192a56; margin-bottom: 10px; }
+    .now-serving-label { font-size: .85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #7f8fa6; margin-bottom: 5px; }
+    .queue-number { font-size: 3rem; font-weight: 700; color: #273c75; line-height: 1; }
+    .queue-number.calling { color: #e84118; animation: callingPulse 1s infinite; }
+    .loading { grid-column: 1 / -1; text-align: center; padding: 60px; font-size: 1.3rem; color: #7f8fa6; }
+
+    .refresh-indicator { position: fixed; bottom: 15px; right: 20px; background: rgba(0,0,0,.7); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: .85rem; display: flex; align-items: center; gap: 8px; z-index: 100; }
+    .pulse-dot { width: 8px; height: 8px; background: #4cd137; border-radius: 50%; animation: pulseDot 2s infinite; }
+
+    @keyframes alertSlideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes callingPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    @keyframes pulseDot { 0%,100% { opacity:1; transform: scale(1); } 50% { opacity:.5; transform: scale(.8); } }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(76,209,55,.5); border-radius: 4px; }
+
+    @media (max-width: 1200px) {
+      .main-container { flex-direction: column; }
+      .alerts-panel { width: 100%; max-width: none; height: 30%; border-right: none; border-bottom: 3px solid #4cd137; }
+      .alerts-list { display: flex; flex-wrap: wrap; gap: 10px; padding: 15px; }
+      .serve-alert-card { flex: 1; min-width: 250px; margin-bottom: 0; }
+      .queue-panel { width: 100%; height: 70%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <!-- Left: Alerts -->
+    <div class="alerts-panel">
+      <div class="alerts-header">
+        <span class="icon">📢</span>
+        <h2>Now Calling</h2>
+      </div>
+      <div class="alerts-list" id="serveAlerts">
+        <div class="serve-alert-card" style="text-align:center;opacity:.6">
+          <div style="justify-content:center">Waiting for calls...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Queue Cards -->
+    <div class="queue-panel">
+      <div class="queue-header">
+        <h1 id="eventTitle">Queue Display</h1>
+        <div class="subtitle" id="eventSubtitle"></div>
+      </div>
+      <div class="display-grid" id="displayGrid">
+        <div class="loading">Loading queue data...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="refresh-indicator">
+    <div class="pulse-dot"></div>
+    Live
+  </div>
+
+  <audio id="dingSound" preload="auto">
+    <source src="https://www.soundjay.com/buttons/sounds/button-09.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    let previousAlerts = [];
+    let callingTransaction = null;
+
+    window.onload = () => {
+      loadAll();
+      setInterval(loadAll, 5000);
+    };
+
+    function loadAll() {
+      google.script.run.withSuccessHandler(displayQueue).withFailureHandler(e => console.error(e)).getQueueDisplay();
+      google.script.run.withSuccessHandler(handleAlerts).withFailureHandler(e => console.error(e)).getRecentAlerts();
+    }
+
+    function displayQueue(data) {
+      const grid = document.getElementById('displayGrid');
+      if (!data || !data.length) { grid.innerHTML = '<div class="loading">No counters configured</div>'; return; }
+
+      grid.innerHTML = '';
+      data.forEach(t => {
+        const card = document.createElement('div');
+        card.className = 'transaction-display';
+        const isCalling = callingTransaction === t.name;
+        card.innerHTML = `
+          <div class="card-with-logo">
+            <div class="card-logo">
+              <img src="${t.logo}" alt="${t.name}" onerror="this.style.display='none'">
+            </div>
+            <div class="card-content">
+              <div class="transaction-name">${t.name}</div>
+              <div>
+                <div class="now-serving-label">Now Serving</div>
+                <div class="queue-number ${isCalling ? 'calling' : ''}">${t.nowServing || '---'}</div>
+              </div>
+            </div>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    function handleAlerts(alerts) {
+      if (alerts && alerts.length > 0 && previousAlerts.length > 0) {
+        if (alerts[0].timestamp !== previousAlerts[0].timestamp) playDing();
+      }
+      previousAlerts = alerts || [];
+      displayAlerts(alerts);
+    }
+
+    function displayAlerts(alerts) {
+      const container = document.getElementById('serveAlerts');
+      if (!alerts || !alerts.length) {
+        container.innerHTML = '<div class="serve-alert-card" style="text-align:center;opacity:.6"><div>Waiting for calls...</div></div>';
+        return;
+      }
+      container.innerHTML = alerts.map((a, i) => {
+        const cls = a.status === 'missed' ? 'missed' : (i === 0 ? 'new-alert' : '');
+        return `<div class="serve-alert-card ${cls}">
+          <div class="alert-logo"><img src="${a.logo || ''}" alt="${a.transaction}" onerror="this.style.display='none'"></div>
+          <div class="alert-content">
+            <div class="alert-number-qr ${a.status === 'missed' ? 'missed-text' : ''}">${a.number} - ${a.qr || 'N/A'}${a.status === 'missed' ? ' (MISSED)' : ''}</div>
+            <div class="alert-transaction">${a.transaction}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function playDing() {
+      const audio = document.getElementById('dingSound');
+      if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
+    }
+  </script>
+</body>
+</html>

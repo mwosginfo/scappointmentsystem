@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+    .admin-nav { background: #1a1a2e; padding: 15px 30px; }
+    .admin-nav h4 { color: #fff; margin: 0; }
+    .admin-nav a { color: #a4b0be; text-decoration: none; margin-left: 20px; font-size: 14px; }
+    .admin-nav a:hover { color: #4cd137; }
+    .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 20px; }
+    .card-header { font-weight: 600; border-radius: 12px 12px 0 0 !important; }
+    .badge-cat { font-size: 11px; padding: 3px 8px; border-radius: 20px; }
+    .cat-appointment { background: #d4edda; color: #155724; }
+    .cat-embassy { background: #cce5ff; color: #004085; }
+    .cat-other { background: #f8f9fa; color: #495057; }
+    .btn-sm { font-size: 13px; }
+    .table td, .table th { vertical-align: middle; }
+    .toggle-switch { cursor: pointer; }
+    .counter-card { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+    .date-tag { display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin: 2px; }
+  </style>
+</head>
+<body>
+  <div class="admin-nav d-flex align-items-center justify-content-between">
+    <h4>⚙️ System Admin</h4>
+    <div>
+      <a href="?page=appointment">Appointment</a>
+      <a href="?page=attendance">Attendance</a>
+      <a href="?page=selfcheckin">Walk-In</a>
+      <a href="?page=display">Display</a>
+      <a href="?page=agency">Agency Counter</a>
+      <a href="?page=stats">Statistics</a>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4" style="max-width:1200px">
+
+    <!-- GLOBAL SETTINGS -->
+    <div class="card">
+      <div class="card-header bg-primary text-white">Global Settings</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Walk-In Registration</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input toggle-switch" type="checkbox" id="walkInToggle" onchange="toggleWalkIn(this.checked)">
+              <label class="form-check-label" id="walkInLabel">Loading...</label>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-bold">Appointment Dates</label>
+            <div class="d-flex gap-2">
+              <input type="date" class="form-control" id="newDate" style="max-width:200px">
+              <input type="text" class="form-control" id="newDateLabel" placeholder="Display label (e.g. 29 Nov)" style="max-width:180px">
+              <button class="btn btn-primary btn-sm" onclick="addDate()">Add Date</button>
+            </div>
+            <div id="datesList" class="mt-2"></div>
+          </div>
+        </div>
+
+        <hr>
+        <h6>Slot Configuration</h6>
+        <div class="row g-2">
+          <div class="col-auto">
+            <label class="form-label">Default Start Time</label>
+            <input type="time" class="form-control" id="slotStart" value="08:00">
+          </div>
+          <div class="col-auto">
+            <label class="form-label">Default End Time</label>
+            <input type="time" class="form-control" id="slotEnd" value="16:30">
+          </div>
+          <div class="col-auto">
+            <label class="form-label">Interval (min)</label>
+            <input type="number" class="form-control" id="slotInterval" value="30" min="10" max="120" style="width:80px">
+          </div>
+          <div class="col-auto d-flex align-items-end">
+            <button class="btn btn-outline-primary btn-sm" onclick="saveSlotConfig()">Save Slot Config</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENCIES TABLE -->
+    <div class="card">
+      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <span>Agencies / Services</span>
+        <button class="btn btn-light btn-sm" onclick="showAddAgency()">+ Add Agency</button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" id="agenciesTable">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Key</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Appointment?</th>
+                <th>Sheet</th>
+                <th>Enabled</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="agenciesBody">
+              <tr><td colspan="8" class="text-center">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUEUE COUNTERS -->
+    <div class="card">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span>Queue Counters (for Agency Calling)</span>
+        <button class="btn btn-light btn-sm" onclick="addCounter()">+ Add Counter</button>
+      </div>
+      <div class="card-body" id="countersContainer">
+        <p class="text-muted">Loading...</p>
+      </div>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div class="card border-danger">
+      <div class="card-header bg-danger text-white">Danger Zone</div>
+      <div class="card-body">
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-outline-danger" onclick="resetQueues()">Reset All Queues (New Day)</button>
+          <button class="btn btn-outline-warning" onclick="clearAlertsAdmin()">Clear All Alerts</button>
+          <button class="btn btn-outline-secondary" onclick="initSystem()">Re-Initialize System</button>
+        </div>
+        <div id="dangerResult" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENCY EDIT MODAL -->
+  <div class="modal fade" id="agencyModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="agencyModalTitle">Add Agency</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editRowIndex">
+          <div class="mb-2">
+            <label class="form-label">Agency Key (unique, no spaces)</label>
+            <input type="text" class="form-control" id="agKey" placeholder="e.g. SSS, LTO">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Display Name</label>
+            <input type="text" class="form-control" id="agName">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-control" id="agDesc">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Services (pipe-separated)</label>
+            <input type="text" class="form-control" id="agServices" placeholder="Service 1|Service 2|Service 3">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Logo URL</label>
+            <input type="text" class="form-control" id="agLogo">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="agCategory">
+              <option value="appointment">Appointment Required</option>
+              <option value="embassy">Embassy</option>
+              <option value="other">Other (simple checkbox)</option>
+              <option value="other_multi">Other (multi-select)</option>
+              <option value="other_radio">Other (radio/single select)</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Sheet Name</label>
+            <input type="text" class="form-control" id="agSheet">
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="agNeedsAppt">
+            <label class="form-check-label">Requires Appointment Slot</label>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Sort Order</label>
+            <input type="number" class="form-control" id="agSort" value="99" style="width:80px">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" onclick="saveAgency()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let agencies = [];
+    let counters = [];
+    let appointmentDates = [];
+    let agencyModal;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      agencyModal = new bootstrap.Modal(document.getElementById('agencyModal'));
+      loadAll();
+    });
+
+    function loadAll() {
+      google.script.run.withSuccessHandler(d => {
+        document.getElementById('walkInToggle').checked = d;
+        document.getElementById('walkInLabel').textContent = d ? 'Enabled' : 'Disabled';
+      }).getWalkInEnabled();
+
+      google.script.run.withSuccessHandler(d => {
+        appointmentDates = d || [];
+        renderDates();
+      }).getAppointmentDates();
+
+      google.script.run.withSuccessHandler(renderAgencies).getAgencies();
+      google.script.run.withSuccessHandler(d => { counters = d || []; renderCounters(); }).getCounters();
+
+      google.script.run.withSuccessHandler(cfg => {
+        if (cfg && cfg.default) {
+          if (cfg.default.startTime) document.getElementById('slotStart').value = cfg.default.startTime;
+          if (cfg.default.endTime) document.getElementById('slotEnd').value = cfg.default.endTime;
+          if (cfg.default.interval) document.getElementById('slotInterval').value = cfg.default.interval;
+        }
+      }).getSlotConfig();
+    }
+
+    // ---- Walk-In Toggle ----
+    function toggleWalkIn(enabled) {
+      google.script.run.withSuccessHandler(() => {
+        document.getElementById('walkInLabel').textContent = enabled ? 'Enabled' : 'Disabled';
+      }).setWalkInEnabled(enabled);
+    }
+
+    // ---- Dates ----
+    function addDate() {
+      const date = document.getElementById('newDate').value;
+      const label = document.getElementById('newDateLabel').value;
+      if (!date) return alert('Pick a date');
+      appointmentDates.push({ date, label: label || date });
+      google.script.run.setAppointmentDates(appointmentDates);
+      renderDates();
+      document.getElementById('newDate').value = '';
+      document.getElementById('newDateLabel').value = '';
+    }
+
+    function removeDate(idx) {
+      appointmentDates.splice(idx, 1);
+      google.script.run.setAppointmentDates(appointmentDates);
+      renderDates();
+    }
+
+    function renderDates() {
+      const el = document.getElementById('datesList');
+      if (!appointmentDates.length) { el.innerHTML = '<em class="text-muted">No dates set</em>'; return; }
+      el.innerHTML = appointmentDates.map((d, i) =>
+        `<span class="date-tag">${d.label || d.date} (${d.date}) <span style="cursor:pointer;color:red" onclick="removeDate(${i})">×</span></span>`
+      ).join('');
+    }
+
+    // ---- Slot Config ----
+    function saveSlotConfig() {
+      const config = {
+        default: {
+          startTime: document.getElementById('slotStart').value,
+          endTime: document.getElementById('slotEnd').value,
+          interval: parseInt(document.getElementById('slotInterval').value)
+        }
+      };
+      // Parse time strings to hours/minutes for the slot generator
+      const [sh, sm] = config.default.startTime.split(':').map(Number);
+      const [eh, em] = config.default.endTime.split(':').map(Number);
+      config.default.startHour = sh;
+      config.default.startMinute = sm;
+      config.default.endHour = eh;
+      config.default.endMinute = em;
+
+      google.script.run.withSuccessHandler(() => alert('Slot config saved!')).setSlotConfig(config);
+    }
+
+    // ---- Agencies ----
+    function renderAgencies(data) {
+      agencies = data || [];
+      const tbody = document.getElementById('agenciesBody');
+      if (!agencies.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No agencies configured</td></tr>'; return; }
+
+      tbody.innerHTML = agencies.map((a, i) => {
+        const catClass = a.category === 'appointment' ? 'cat-appointment' : a.category === 'embassy' ? 'cat-embassy' : 'cat-other';
+        return `<tr>
+          <td>${a.sortOrder}</td>
+          <td><code>${a.agencyKey}</code></td>
+          <td><strong>${a.agencyName}</strong><br><small class="text-muted">${a.services.join(', ')}</small></td>
+          <td><span class="badge badge-cat ${catClass}">${a.category}</span></td>
+          <td>${a.needsAppointment ? '✅' : '—'}</td>
+          <td><code>${a.sheetName}</code></td>
+          <td>${a.enabled ? '🟢' : '🔴'}</td>
+          <td>
+            <button class="btn btn-outline-primary btn-sm" onclick="editAgency(${i})">Edit</button>
+            <button class="btn btn-outline-danger btn-sm" onclick="deleteAg(${a.rowIndex})">Del</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function showAddAgency() {
+      document.getElementById('agencyModalTitle').textContent = 'Add Agency';
+      document.getElementById('editRowIndex').value = '';
+      ['agKey','agName','agDesc','agServices','agLogo','agSheet'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('agCategory').value = 'other';
+      document.getElementById('agNeedsAppt').checked = false;
+      document.getElementById('agSort').value = 99;
+      agencyModal.show();
+    }
+
+    function editAgency(idx) {
+      const a = agencies[idx];
+      document.getElementById('agencyModalTitle').textContent = 'Edit Agency';
+      document.getElementById('editRowIndex').value = a.rowIndex;
+      document.getElementById('agKey').value = a.agencyKey;
+      document.getElementById('agName').value = a.agencyName;
+      document.getElementById('agDesc').value = a.description;
+      document.getElementById('agServices').value = a.services.join('|');
+      document.getElementById('agLogo').value = a.logoUrl;
+      document.getElementById('agCategory').value = a.category;
+      document.getElementById('agSheet').value = a.sheetName;
+      document.getElementById('agNeedsAppt').checked = a.needsAppointment;
+      document.getElementById('agSort').value = a.sortOrder;
+      agencyModal.show();
+    }
+
+    function saveAgency() {
+      const data = {
+        agencyKey: document.getElementById('agKey').value.trim(),
+        agencyName: document.getElementById('agName').value.trim(),
+        description: document.getElementById('agDesc').value.trim(),
+        services: document.getElementById('agServices').value.split('|').map(s => s.trim()).filter(Boolean),
+        logoUrl: document.getElementById('agLogo').value.trim(),
+        category: document.getElementById('agCategory').value,
+        needsAppointment: document.getElementById('agNeedsAppt').checked,
+        appointmentDates: [],
+        sheetName: document.getElementById('agSheet').value.trim() || document.getElementById('agKey').value.trim(),
+        enabled: true,
+        sortOrder: parseInt(document.getElementById('agSort').value) || 99
+      };
+      if (!data.agencyKey || !data.agencyName) return alert('Key and Name are required');
+
+      const rowIndex = document.getElementById('editRowIndex').value;
+      const callback = () => {
+        agencyModal.hide();
+        google.script.run.withSuccessHandler(renderAgencies).getAgencies();
+      };
+
+      if (rowIndex) {
+        google.script.run.withSuccessHandler(callback).updateAgency(parseInt(rowIndex), data);
+      } else {
+        google.script.run.withSuccessHandler(callback).addAgency(data);
+      }
+    }
+
+    function deleteAg(rowIndex) {
+      if (!confirm('Delete this agency?')) return;
+      google.script.run.withSuccessHandler(() => {
+        google.script.run.withSuccessHandler(renderAgencies).getAgencies();
+      }).deleteAgency(rowIndex);
+    }
+
+    // ---- Counters ----
+    function renderCounters() {
+      const container = document.getElementById('countersContainer');
+      if (!counters.length) {
+        container.innerHTML = '<p class="text-muted">No counters configured. Add counters for the queue calling system.</p>';
+        return;
+      }
+      container.innerHTML = counters.map((c, i) => `
+        <div class="counter-card d-flex justify-content-between align-items-center">
+          <div>
+            <strong>${c.name}</strong>
+            <br><small class="text-muted">Sheet: ${c.sheet} | Confirm Col: ${c.confirmCol || 8}</small>
+          </div>
+          <div>
+            <button class="btn btn-outline-danger btn-sm" onclick="removeCounter(${i})">Remove</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addCounter() {
+      const name = prompt('Counter name (e.g. "Counter 1 - LTO"):');
+      if (!name) return;
+      const sheet = prompt('Sheet name to pull queue from:', 'LTO');
+      if (!sheet) return;
+      const logo = prompt('Logo URL (optional):', '') || '';
+      const confirmCol = parseInt(prompt('Confirmation column number (default 8):', '8')) || 8;
+
+      counters.push({ name, sheet, logo, confirmCol, skipSubTrans: false });
+      google.script.run.withSuccessHandler(() => renderCounters()).saveCounters(counters);
+    }
+
+    function removeCounter(idx) {
+      if (!confirm('Remove this counter?')) return;
+      counters.splice(idx, 1);
+      google.script.run.withSuccessHandler(() => renderCounters()).saveCounters(counters);
+    }
+
+    // ---- Danger Zone ----
+    function resetQueues() {
+      if (!confirm('Reset ALL queue displays? This clears all Now Serving info.')) return;
+      google.script.run.withSuccessHandler(r => {
+        document.getElementById('dangerResult').innerHTML = `<div class="alert alert-success">${r.message}</div>`;
+      }).resetQueueDisplay();
+    }
+
+    function clearAlertsAdmin() {
+      if (!confirm('Clear all recent call alerts?')) return;
+      google.script.run.withSuccessHandler(() => {
+        document.getElementById('dangerResult').innerHTML = '<div class="alert alert-success">Alerts cleared</div>';
+      }).clearAllAlerts();
+    }
+
+    function initSystem() {
+      if (!confirm('Re-initialize system? This will create missing sheets/config but NOT delete existing data.')) return;
+      google.script.run.withSuccessHandler(r => {
+        document.getElementById('dangerResult').innerHTML = `<div class="alert alert-info">${r.message}</div>`;
+        loadAll();
+      }).initializeSystem();
+    }
+  </script>
+</body>
+</html>

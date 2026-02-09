@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f1f4f9; padding: 20px; font-family: 'Inter', Arial, sans-serif; }
+    h1 { color: #0a2a66; font-weight: 700; margin-bottom: 20px; }
+    .nav-links { margin-bottom: 20px; }
+    .nav-links a { color: #0a55ff; text-decoration: none; margin-right: 15px; font-size: 14px; }
+    #transactionList { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (max-width: 576px) { #transactionList { grid-template-columns: 1fr; } }
+    .transaction-item { background: #f8f9fc; border-left: 4px solid #0a55ff; border-radius: 6px; padding: 12px; }
+    .transaction-item label { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; margin-bottom: 0; }
+    .transaction-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .transaction-item span { font-weight: 500; color: #333; }
+    .queue-input { width: 60px; padding: 6px; border-radius: 6px; border: 2px solid #ccd1d9; text-align: center; font-size: 14px; font-weight: 600; }
+    .queue-input:focus { outline: none; border-color: #0a55ff; box-shadow: 0 0 0 3px rgba(10,85,255,.1); }
+    .time-info { color: #666; font-size: 12px; margin-top: 6px; margin-left: 26px; }
+    .info-section { background: #eaf1ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    .info-section strong { color: #0a2a66; }
+    #tableContainer { max-height: 75vh; overflow-y: auto; }
+    #attendeeTable { width: 100%; border-collapse: collapse; }
+    #attendeeTable th { background-color: #0a55ff; color: white; padding: 12px; text-align: left; position: sticky; top: 0; z-index: 10; }
+    #attendeeTable td { padding: 10px; border-bottom: 1px solid #ddd; cursor: pointer; transition: background-color .2s; }
+    #attendeeTable tr:hover { background-color: #f5f5f5; }
+    .loading { text-align: center; padding: 20px; color: #666; }
+    #checkInCard { transition: all .3s ease-in-out; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="nav-links">
+      <a href="?page=admin">⚙️ Admin</a>
+      <a href="?page=display">📺 Display</a>
+      <a href="?page=agency">🔢 Agency Counter</a>
+    </div>
+
+    <h1>Event Attendee Check-In</h1>
+
+    <div class="row g-4">
+      <!-- LEFT: Attendee List -->
+      <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h4 class="mb-3 text-primary">Select Attendee</h4>
+            <input type="text" id="searchBox" class="form-control mb-3" placeholder="Search by name...">
+            <div id="tableContainer">
+              <table class="table table-hover" id="attendeeTable">
+                <thead><tr><th>Name</th></tr></thead>
+                <tbody id="attendeeTableBody">
+                  <tr><td class="text-center">Loading attendees...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: QR Input + Check-In Card -->
+      <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h4 class="mb-3 text-primary">QR Code / Manual Entry</h4>
+            <input type="text" id="qrInput" class="form-control form-control-lg" placeholder="Scan QR or enter code" autofocus>
+          </div>
+        </div>
+
+        <!-- Check-In Card -->
+        <div id="checkInCard" class="card shadow-sm border-0 mt-4" style="display:none;">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Check-In Confirmation</h5>
+            <button class="btn-close btn-close-white" onclick="closeCheckIn()"></button>
+          </div>
+          <div class="card-body">
+            <div class="info-section mb-4">
+              <p class="mb-2"><strong>Name:</strong> <span id="modalName"></span></p>
+              <p class="mb-0"><strong>Gender:</strong> <span id="modalGender"></span></p>
+            </div>
+            <h5 class="text-secondary mb-3">Transactions & Queue Numbers</h5>
+            <div id="transactionList"></div>
+          </div>
+          <div class="card-footer bg-light d-flex justify-content-end gap-2">
+            <button class="btn btn-danger" onclick="closeCheckIn()">Cancel</button>
+            <button class="btn btn-primary btn-confirm" onclick="confirmCheckIn()">Confirm Check-In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let attendeesMap = {};
+    let attendeesList = [];
+    let currentAttendee = null;
+    let qrTimeout, searchTimeout;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initListeners();
+      setTimeout(() => { const q = document.getElementById('qrInput'); if(q) q.focus(); }, 200);
+      google.script.run.withSuccessHandler(displayAttendees).getAttendees();
+    });
+
+    function initListeners() {
+      const qr = document.getElementById('qrInput');
+      if (qr) qr.addEventListener('input', e => {
+        const code = e.target.value.trim();
+        clearTimeout(qrTimeout);
+        if (code.length > 0) qrTimeout = setTimeout(() => { if (qr.value.trim() === code) processQR(code); }, 100);
+      });
+
+      const search = document.getElementById('searchBox');
+      if (search) search.addEventListener('input', e => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => filterAttendees(e.target.value.toLowerCase()), 150);
+      });
+    }
+
+    function displayAttendees(data) {
+      attendeesList = data;
+      attendeesMap = {};
+      data.forEach(a => { attendeesMap[a.qrCode] = a; });
+      filterAttendees('');
+    }
+
+    function filterAttendees(term) {
+      const tbody = document.getElementById('attendeeTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const filtered = term ? attendeesList.filter(a => a.name.toLowerCase().includes(term)) : attendeesList;
+      if (!filtered.length) { tbody.innerHTML = '<tr><td class="loading">No attendees found</td></tr>'; return; }
+
+      const frag = document.createDocumentFragment();
+      filtered.forEach(a => {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.textContent = a.name;
+        row.appendChild(cell);
+        row.onclick = () => loadDetails(a.qrCode);
+        frag.appendChild(row);
+      });
+      tbody.appendChild(frag);
+    }
+
+    function processQR(code) {
+      if (attendeesMap[code]) loadDetails(code);
+      else { alert('Not found: ' + code); document.getElementById('qrInput').value = ''; }
+    }
+
+    function loadDetails(qrCode) {
+      google.script.run.withSuccessHandler(showCheckInCard).withFailureHandler(e => {
+        alert('Error: ' + e.message);
+        google.script.run.withSuccessHandler(displayAttendees).getAttendees();
+      }).getAttendeeDetails(qrCode);
+    }
+
+    function showCheckInCard(attendee) {
+      if (!attendee) { alert('Not found'); return; }
+      currentAttendee = attendee;
+
+      document.getElementById('modalName').textContent = attendee.name;
+      document.getElementById('modalGender').textContent = attendee.gender;
+
+      const list = document.getElementById('transactionList');
+      list.innerHTML = '';
+      const frag = document.createDocumentFragment();
+
+      attendee.transactions.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'transaction-item';
+
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = t.name; cb.checked = t.selected; cb.className = 'trans-checkbox';
+
+        const span = document.createElement('span');
+        span.textContent = t.displayName || t.name;
+
+        const qi = document.createElement('input');
+        qi.type = 'number'; qi.className = 'queue-input'; qi.value = t.queueNumber || '';
+        qi.placeholder = '#'; qi.min = '1'; qi.dataset.transaction = t.name;
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        label.appendChild(qi);
+        div.appendChild(label);
+
+        if (t.time) {
+          const timeDiv = document.createElement('div');
+          timeDiv.className = 'time-info';
+          timeDiv.textContent = '⏰ ' + t.time;
+          div.appendChild(timeDiv);
+        }
+        frag.appendChild(div);
+      });
+
+      list.appendChild(frag);
+
+      const card = document.getElementById('checkInCard');
+      card.style.display = 'block';
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+      document.getElementById('qrInput').value = '';
+    }
+
+    function closeCheckIn() {
+      document.getElementById('checkInCard').style.display = 'none';
+      document.getElementById('qrInput').focus();
+      currentAttendee = null;
+    }
+
+    function confirmCheckIn() {
+      const cbs = document.querySelectorAll('#transactionList input[type="checkbox"]:checked');
+      const transactions = [];
+      const queueNumbers = {};
+
+      cbs.forEach(cb => {
+        transactions.push(cb.value);
+        const qi = document.querySelector(`.queue-input[data-transaction="${cb.value}"]`);
+        if (qi && qi.value) queueNumbers[cb.value] = parseInt(qi.value);
+      });
+
+      if (!transactions.length) { alert('Select at least one transaction.'); return; }
+
+      const btn = document.querySelector('.btn-confirm');
+      btn.textContent = 'Processing...';
+      btn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(() => {
+          alert('Check-in successful!');
+          closeCheckIn();
+          btn.textContent = 'Confirm Check-In';
+          btn.disabled = false;
+          google.script.run.withSuccessHandler(displayAttendees).getAttendees();
+        })
+        .withFailureHandler(e => {
+          alert('Error: ' + e.message);
+          btn.textContent = 'Confirm Check-In';
+          btn.disabled = false;
+        })
+        .processCheckIn({
+          qrCode: currentAttendee.qrCode,
+          name: currentAttendee.name,
+          email: currentAttendee.email,
+          contact: currentAttendee.contact,
+          gender: currentAttendee.gender,
+          employer: currentAttendee.employer,
+          transactions: transactions,
+          queueNumbers: queueNumbers,
+          allTransactions: currentAttendee.transactions
+        });
+    }
+  </script>
+</body>
+</html>

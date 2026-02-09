@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    body { background: linear-gradient(135deg, #f5f7fa, #e4e8ec); min-height: 100vh; }
+
+    .admin-container { display: flex; height: 100vh; overflow: hidden; }
+    .admin-main { flex: 1; padding: 30px; overflow-y: auto; }
+    .admin-alerts { width: 350px; background: #1a1a2e; padding: 20px; overflow-y: auto; border-left: 3px solid #4cd137; }
+
+    .admin-header { margin-bottom: 20px; text-align: center; }
+    .admin-header h1 { font-size: 1.6rem; font-weight: 700; color: #192a56; }
+    .admin-header p { color: #7f8fa6; }
+    .admin-header .nav-links a { color: #0a55ff; text-decoration: none; margin: 0 8px; font-size: 13px; }
+
+    .selector-card { background: #fff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,.1); margin-bottom: 25px; }
+    .selector-card label { font-weight: 600; color: #2f3640; margin-bottom: 10px; display: block; }
+    .selector-card select { width: 100%; padding: 12px 15px; border: 2px solid #dcdde1; border-radius: 10px; font-size: 1rem; }
+
+    .action-card { background: #fff; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,.1); text-align: center; }
+    .action-card h3 { font-size: 1.5rem; font-weight: 700; color: #192a56; margin-bottom: 10px; }
+    .counter-badge { width: 60px; height: 60px; background: linear-gradient(135deg, #273c75, #192a56); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: #fff; margin: 0 auto 15px; }
+    .current-serving { background: #f5f6fa; border-radius: 12px; padding: 15px; margin: 20px 0; }
+    .current-serving .number { font-size: 2.5rem; font-weight: 700; color: #273c75; }
+    .current-serving .qr-code { font-size: 1rem; color: #7f8fa6; }
+
+    .button-group { display: flex; gap: 15px; margin-top: 15px; }
+    .btn-action { color: #fff; border: none; padding: 15px 20px; font-size: 1rem; font-weight: 600; border-radius: 12px; cursor: pointer; transition: transform .2s, box-shadow .2s; flex: 1; }
+    .btn-served { background: linear-gradient(135deg, #4cd137, #44bd32); }
+    .btn-served:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(76,209,55,.4); }
+    .btn-missed { background: linear-gradient(135deg, #e84118, #c23616); }
+    .btn-missed:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232,65,24,.4); }
+    .btn-action:disabled { background: #dcdde1; cursor: not-allowed; transform: none; }
+
+    #actionResult { margin-top: 20px; padding: 15px; border-radius: 10px; font-weight: 500; }
+    #actionResult.success { background: #d4edda; color: #155724; }
+    #actionResult.error { background: #f8d7da; color: #721c24; }
+
+    .next-preview { margin-top: 20px; padding-top: 20px; border-top: 1px solid #dcdde1; }
+    .next-preview h4 { font-size: 1rem; color: #7f8fa6; margin-bottom: 10px; }
+    .next-preview-list { display: flex; gap: 10px; flex-wrap: wrap; }
+    .next-preview-item { background: #f5f6fa; padding: 8px 15px; border-radius: 8px; font-weight: 500; color: #2f3640; }
+
+    /* Alert panel items */
+    .admin-alerts-header { color: #4cd137; font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .admin-alert-item { background: rgba(255,255,255,.1); border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; border-left: 4px solid #4cd137; animation: slideIn .3s ease; }
+    .admin-alert-item.missed { border-left-color: #e84118; }
+    .admin-alert-item .alert-number { font-size: 1.3rem; font-weight: 700; color: #4cd137; }
+    .admin-alert-item.missed .alert-number { color: #e84118; }
+    .admin-alert-item .alert-details { font-size: .85rem; color: #a4b0be; }
+    .admin-alert-item .alert-transaction { font-size: .95rem; color: #fff; font-weight: 500; }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* Subtrans overlay */
+    .subtrans-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.5); z-index: 1000; justify-content: center; align-items: center; }
+    .subtrans-overlay.show { display: flex; }
+    .subtrans-card { background: #fff; border-radius: 16px; padding: 25px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+    .subtrans-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; background: #f5f6fa; border-radius: 10px; cursor: pointer; margin-bottom: 8px; }
+    .subtrans-item:hover { background: #e8e9ed; }
+    .subtrans-item input { width: 20px; height: 20px; pointer-events: none; }
+    .subtrans-item label { flex: 1; font-weight: 500; color: #2f3640; pointer-events: none; }
+    .subtrans-buttons { display: flex; gap: 15px; margin-top: 15px; }
+    .subtrans-buttons button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .btn-sub-confirm { background: linear-gradient(135deg, #4cd137, #44bd32); color: #fff; }
+    .btn-sub-cancel { background: #f5f6fa; color: #2f3640; }
+
+    @media (max-width: 768px) {
+      .admin-container { flex-direction: column; }
+      .admin-alerts { width: 100%; height: 250px; border-left: none; border-top: 3px solid #4cd137; }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <div class="admin-main">
+      <div class="admin-header">
+        <h1>Agency Counter Panel</h1>
+        <p>Call, serve, and manage your queue</p>
+        <div class="nav-links">
+          <a href="?page=admin">⚙️ Admin</a>
+          <a href="?page=attendance">📋 Attendance</a>
+          <a href="?page=display">📺 Display</a>
+        </div>
+      </div>
+
+      <!-- Counter Selector -->
+      <div class="selector-card">
+        <label>Choose Your Counter</label>
+        <select id="counterSelect" onchange="loadCounterCard()">
+          <option value="" disabled selected>Select a counter...</option>
+        </select>
+      </div>
+
+      <!-- Action Card -->
+      <div id="counterCard"></div>
+    </div>
+
+    <!-- Alerts Panel -->
+    <div class="admin-alerts">
+      <div class="admin-alerts-header">
+        <span>📢</span> Recent Calls
+      </div>
+      <div id="serveAlerts"><p style="color:#a4b0be;text-align:center">Loading...</p></div>
+    </div>
+  </div>
+
+  <audio id="dingSound" preload="auto">
+    <source src="https://www.soundjay.com/buttons/sounds/button-09.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Sub-transaction Overlay -->
+  <div id="subtransOverlay" class="subtrans-overlay">
+    <div class="subtrans-card">
+      <h5 id="subtransTitle">Sub-transactions</h5>
+      <p style="font-size:.9rem;color:#7f8fa6;">Select completed services:</p>
+      <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-sm btn-outline-secondary" onclick="toggleAllSubs(true)">Select All</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="toggleAllSubs(false)">Unselect All</button>
+      </div>
+      <div id="subtransList"></div>
+      <div class="subtrans-buttons">
+        <button class="btn-sub-cancel" onclick="closeSubs()">Cancel</button>
+        <button class="btn-sub-confirm" onclick="confirmSubs()">Confirm & Call Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentCounter = null;
+    let counters = [];
+
+    window.onload = () => {
+      google.script.run.withSuccessHandler(data => {
+        counters = data || [];
+        const sel = document.getElementById('counterSelect');
+        counters.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.name;
+          opt.textContent = c.name;
+          sel.appendChild(opt);
+        });
+      }).getCounters();
+
+      loadAlerts();
+      setInterval(loadAlerts, 5000);
+    };
+
+    function playDing() {
+      const a = document.getElementById('dingSound');
+      if (a) { a.currentTime = 0; a.play().catch(() => {}); }
+    }
+
+    // ---- ALERTS ----
+    function loadAlerts() {
+      google.script.run.withSuccessHandler(displayAlerts).getRecentAlerts();
+    }
+
+    function displayAlerts(alerts) {
+      const el = document.getElementById('serveAlerts');
+      if (!alerts || !alerts.length) { el.innerHTML = '<p style="color:#a4b0be;text-align:center">No recent calls</p>'; return; }
+      el.innerHTML = alerts.map(a => {
+        const missed = a.status === 'missed';
+        return `<div class="admin-alert-item ${missed ? 'missed' : ''}">
+          <div class="alert-number">${missed ? 'Missed' : 'Serving'} #${a.number}</div>
+          <div class="alert-transaction">${a.transaction}</div>
+          <div class="alert-details">${a.qr || 'N/A'}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ---- COUNTER CARD ----
+    function loadCounterCard() {
+      const name = document.getElementById('counterSelect').value;
+      if (!name) return;
+      currentCounter = name;
+
+      document.getElementById('counterCard').innerHTML = '<div class="action-card"><p>Loading...</p></div>';
+
+      google.script.run.withSuccessHandler(updateCard).withFailureHandler(e => {
+        document.getElementById('counterCard').innerHTML = `<div class="action-card"><p class="text-danger">Error: ${e.message}</p></div>`;
+      }).getQueueDisplay();
+    }
+
+    function updateCard(data) {
+      const t = data.find(d => d.name === currentCounter);
+      if (!t) { document.getElementById('counterCard').innerHTML = '<div class="action-card"><p>Counter not found in queue data.</p></div>'; return; }
+
+      let nextHtml = '';
+      if (t.nextInLine && t.nextInLine.length > 0) {
+        nextHtml = `<div class="next-preview"><h4>Next in Line</h4><div class="next-preview-list">
+          ${t.nextInLine.slice(0, 5).map(n => `<span class="next-preview-item">#${n.queue}</span>`).join('')}</div></div>`;
+      }
+
+      document.getElementById('counterCard').innerHTML = `
+        <div class="action-card">
+          <h3>${currentCounter}</h3>
+          <div class="current-serving">
+            <label style="font-size:.9rem;color:#7f8fa6">Currently Serving</label>
+            <div class="number">${t.nowServing || '---'}</div>
+            <div class="qr-code">${t.nowServingQR || ''}</div>
+          </div>
+          <div class="button-group">
+            <button class="btn-action btn-served" id="servedBtn" onclick="markServed()">✅ Served & Call Next</button>
+            <button class="btn-action btn-missed" id="missedBtn" onclick="markMissed()">❌ Missed & Call Next</button>
+          </div>
+          <div id="actionResult"></div>
+          ${nextHtml}
+        </div>`;
+    }
+
+    // ---- SERVED ----
+    function markServed() {
+      if (!currentCounter) return;
+      const btn = document.getElementById('servedBtn');
+      btn.disabled = true; btn.textContent = 'Loading...';
+
+      google.script.run.withSuccessHandler(result => {
+        if (result.skip || !result.subTransactions || !result.subTransactions.length) {
+          btn.textContent = 'Processing...';
+          doServed([]);
+        } else {
+          btn.disabled = false; btn.textContent = '✅ Served & Call Next';
+          showSubs(result.subTransactions);
+        }
+      }).withFailureHandler(e => {
+        btn.disabled = false; btn.textContent = '✅ Served & Call Next';
+        showResult('error', 'Error: ' + e.message);
+      }).getSubTransactions(currentCounter);
+    }
+
+    function doServed(cols) {
+      const btn = document.getElementById('servedBtn');
+      const fn = cols.length > 0
+        ? () => google.script.run.withSuccessHandler(onServedResult).withFailureHandler(onServedError).markServedWithSubTransactions(currentCounter, cols)
+        : () => google.script.run.withSuccessHandler(onServedResult).withFailureHandler(onServedError).markServedAndCallNext(currentCounter);
+      fn();
+    }
+
+    function onServedResult(r) {
+      document.getElementById('servedBtn').disabled = false;
+      document.getElementById('servedBtn').textContent = '✅ Served & Call Next';
+      if (r.success) { playDing(); showResult('success', `Now Serving: #${r.number} — ${r.qrCode || 'N/A'}`); loadCounterCard(); loadAlerts(); }
+      else showResult('error', r.message || 'No more in queue');
+    }
+
+    function onServedError(e) {
+      document.getElementById('servedBtn').disabled = false;
+      document.getElementById('servedBtn').textContent = '✅ Served & Call Next';
+      showResult('error', 'Error: ' + e.message);
+    }
+
+    // ---- MISSED ----
+    function markMissed() {
+      if (!currentCounter) return;
+      const btn = document.getElementById('missedBtn');
+      btn.disabled = true; btn.textContent = 'Processing...';
+
+      google.script.run.withSuccessHandler(r => {
+        btn.disabled = false; btn.textContent = '❌ Missed & Call Next';
+        if (r.success) { playDing(); showResult('success', `Now Serving: #${r.number} — ${r.qrCode || 'N/A'}`); loadCounterCard(); loadAlerts(); }
+        else showResult('error', r.message || 'No more in queue');
+      }).withFailureHandler(e => {
+        btn.disabled = false; btn.textContent = '❌ Missed & Call Next';
+        showResult('error', 'Error: ' + e.message);
+      }).markMissedAndCallNext(currentCounter);
+    }
+
+    // ---- SUB-TRANSACTIONS ----
+    function showSubs(subs) {
+      document.getElementById('subtransTitle').textContent = currentCounter + ' — Sub-transactions';
+      document.getElementById('subtransList').innerHTML = subs.map((s, i) =>
+        `<div class="subtrans-item" onclick="document.getElementById('sub${i}').checked = !document.getElementById('sub${i}').checked">
+          <input type="checkbox" id="sub${i}" data-col="${s.colIndex}" checked>
+          <label>${s.name}</label>
+        </div>`
+      ).join('');
+      document.getElementById('subtransOverlay').classList.add('show');
+    }
+
+    function toggleAllSubs(val) {
+      document.querySelectorAll('#subtransList input').forEach(cb => cb.checked = val);
+    }
+
+    function closeSubs() { document.getElementById('subtransOverlay').classList.remove('show'); }
+
+    function confirmSubs() {
+      const cols = [];
+      document.querySelectorAll('#subtransList input:checked').forEach(cb => cols.push(parseInt(cb.dataset.col)));
+      closeSubs();
+      document.getElementById('servedBtn').disabled = true;
+      document.getElementById('servedBtn').textContent = 'Processing...';
+      doServed(cols);
+    }
+
+    function showResult(type, msg) {
+      const el = document.getElementById('actionResult');
+      el.className = type;
+      el.innerHTML = `<strong>${msg}</strong>`;
+    }
+  </script>
+</body>
+</html>

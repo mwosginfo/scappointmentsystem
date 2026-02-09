@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+    .main-card { max-width: 700px; margin: 30px auto; background: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+    h2 { color: #1a1a2e; font-weight: 700; }
+    .service-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .service-item { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; padding: 12px; cursor: pointer; transition: all .2s; text-align: center; }
+    .service-item:hover { border-color: #667eea; }
+    .service-item.selected { border-color: #28a745; background: #e9f9ed; }
+    .service-item input { display: none; }
+    .result-card { background: #e8f5e9; border-radius: 16px; padding: 24px; text-align: center; }
+    .queue-badge { display: inline-block; background: #1a1a2e; color: #4cd137; font-size: 2rem; font-weight: 700; padding: 10px 24px; border-radius: 12px; margin: 4px; }
+    .queue-label { font-size: .85rem; color: #666; }
+    .disabled-msg { text-align: center; padding: 60px 20px; color: #fff; }
+    .disabled-msg h2 { color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="disabledMessage" class="disabled-msg d-none">
+    <h2>Walk-In Registration</h2>
+    <p style="font-size:1.2rem">Walk-in registration is currently <strong>disabled</strong>.</p>
+    <p>Please register online using the appointment system.</p>
+  </div>
+
+  <div id="mainContent" class="main-card">
+    <!-- FORM -->
+    <div id="formSection">
+      <h2 class="mb-4 text-center">Walk-In Registration</h2>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Last Name *</label>
+          <input type="text" class="form-control" id="lastName" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">First Name *</label>
+          <input type="text" class="form-control" id="firstName" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Middle Name</label>
+          <input type="text" class="form-control" id="middleName">
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="email">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Contact</label>
+          <input type="tel" class="form-control" id="contact">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Gender *</label>
+          <select class="form-select" id="gender" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Employer</label>
+          <input type="text" class="form-control" id="employer">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Position</label>
+          <input type="text" class="form-control" id="position">
+        </div>
+      </div>
+
+      <h5 class="mt-4 mb-3">Select Services *</h5>
+      <div id="serviceGrid" class="service-grid mb-4">
+        <p class="text-muted">Loading services...</p>
+      </div>
+
+      <button class="btn btn-primary btn-lg w-100" id="submitBtn" onclick="submitForm()">Register</button>
+    </div>
+
+    <!-- RESULT -->
+    <div id="resultSection" class="d-none">
+      <div class="result-card">
+        <h3 class="mb-2">✅ Registration Complete!</h3>
+        <p class="mb-1" id="resultName"></p>
+        <p class="mb-3"><strong>Code:</strong> <span id="resultCode" style="font-size:1.3rem;letter-spacing:2px"></span></p>
+
+        <h5>Your Queue Numbers:</h5>
+        <div id="queueNumbers" class="mb-3"></div>
+
+        <button class="btn btn-success btn-lg" onclick="resetForm()">Register Next Person</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let config = null;
+    let selectedServices = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      google.script.run.withSuccessHandler(enabled => {
+        if (!enabled) {
+          document.getElementById('mainContent').classList.add('d-none');
+          document.getElementById('disabledMessage').classList.remove('d-none');
+          return;
+        }
+        google.script.run.withSuccessHandler(loadConfig).getPublicConfig();
+      }).getWalkInEnabled();
+    });
+
+    function loadConfig(cfg) {
+      config = cfg;
+      const grid = document.getElementById('serviceGrid');
+      grid.innerHTML = '';
+
+      const agencies = cfg.agencies.filter(a => a.enabled);
+      agencies.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'service-item';
+        div.dataset.key = a.agencyKey;
+        div.innerHTML = `<strong>${a.agencyName}</strong>`;
+        div.onclick = () => {
+          div.classList.toggle('selected');
+          if (div.classList.contains('selected')) {
+            selectedServices.push(a.agencyKey);
+          } else {
+            selectedServices = selectedServices.filter(s => s !== a.agencyKey);
+          }
+        };
+        grid.appendChild(div);
+      });
+    }
+
+    function submitForm() {
+      const lastName = document.getElementById('lastName').value.trim();
+      const firstName = document.getElementById('firstName').value.trim();
+      const gender = document.getElementById('gender').value;
+
+      if (!lastName || !firstName) { alert('Name is required.'); return; }
+      if (!gender) { alert('Gender is required.'); return; }
+      if (!selectedServices.length) { alert('Select at least one service.'); return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Registering...';
+
+      google.script.run
+        .withSuccessHandler(result => {
+          btn.disabled = false;
+          btn.textContent = 'Register';
+
+          if (!result.success) { alert(result.message); return; }
+
+          document.getElementById('formSection').classList.add('d-none');
+          document.getElementById('resultSection').classList.remove('d-none');
+          document.getElementById('resultName').textContent = result.fullName;
+          document.getElementById('resultCode').textContent = result.code;
+
+          const qDiv = document.getElementById('queueNumbers');
+          qDiv.innerHTML = result.queues
+            .filter(q => q.agency !== 'Attendance')
+            .map(q => `<div><span class="queue-badge">${q.queueNumber}</span><div class="queue-label">${q.agency}</div></div>`)
+            .join('');
+        })
+        .withFailureHandler(e => {
+          btn.disabled = false;
+          btn.textContent = 'Register';
+          alert('Error: ' + e.message);
+        })
+        .submitWalkIn({
+          lastName: lastName,
+          firstName: firstName,
+          middleName: document.getElementById('middleName').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          contact: document.getElementById('contact').value.trim(),
+          gender: gender,
+          employer: document.getElementById('employer').value.trim(),
+          position: document.getElementById('position').value.trim(),
+          serviceTypes: selectedServices
+        });
+    }
+
+    function resetForm() {
+      document.getElementById('formSection').classList.remove('d-none');
+      document.getElementById('resultSection').classList.add('d-none');
+      ['lastName','firstName','middleName','email','contact','employer','position'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('gender').value = '';
+      selectedServices = [];
+      document.querySelectorAll('.service-item').forEach(el => el.classList.remove('selected'));
+    }
+  </script>
+</body>
+</html>
